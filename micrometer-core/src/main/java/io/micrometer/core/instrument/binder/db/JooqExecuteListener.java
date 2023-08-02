@@ -20,14 +20,14 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
 import org.jooq.ExecuteContext;
+import org.jooq.ExecuteListener;
 import org.jooq.exception.DataAccessException;
-import org.jooq.impl.DefaultExecuteListener;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-class JooqExecuteListener extends DefaultExecuteListener {
+class JooqExecuteListener implements ExecuteListener {
 
     private final MeterRegistry registry;
 
@@ -103,7 +103,6 @@ class JooqExecuteListener extends DefaultExecuteListener {
             }
         }
 
-        // noinspection unchecked
         sample.stop(Timer.builder("jooq.query")
             .description("Execution time of a SQL query performed with JOOQ")
             .tags(queryTags)

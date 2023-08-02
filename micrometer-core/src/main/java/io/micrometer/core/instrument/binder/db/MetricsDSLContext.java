@@ -19,6 +19,7 @@ import io.micrometer.core.annotation.Incubating;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
+import io.r2dbc.spi.ConnectionFactory;
 import org.jooq.Record;
 import org.jooq.*;
 import org.jooq.conf.Settings;
@@ -35,6 +36,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
@@ -54,7 +56,7 @@ import java.util.stream.Stream;
  *     jooq.tag("name", "selectAllAuthors").select(asterisk()).from("author").fetch();
  * </code> </pre>
  *
- * This requires jOOQ 3.14.0 or later.
+ * This requires jOOQ 3.17.0 or later.
  *
  * @author Jon Schneider
  * @author Johnny Lim
@@ -161,6 +163,11 @@ public class MetricsDSLContext implements DSLContext {
     }
 
     @Override
+    public ConnectionFactory parsingConnectionFactory() {
+        return context.parsingConnectionFactory();
+    }
+
+    @Override
     public Connection diagnosticsConnection() {
         return context.diagnosticsConnection();
     }
@@ -176,7 +183,22 @@ public class MetricsDSLContext implements DSLContext {
     }
 
     @Override
-    public Migration migrateTo(Version to) {
+    public Versions versions() {
+        return context.versions();
+    }
+
+    @Override
+    public Commit commit(String id) {
+        return context.commit(id);
+    }
+
+    @Override
+    public Commits commits() {
+        return context.commits();
+    }
+
+    @Override
+    public Migration migrateTo(Commit to) {
         return context.migrateTo(to);
     }
 
@@ -216,7 +238,6 @@ public class MetricsDSLContext implements DSLContext {
     }
 
     @Override
-    @Internal
     public Meta meta(Source... scripts) {
         return context.meta(scripts);
     }
@@ -305,6 +326,11 @@ public class MetricsDSLContext implements DSLContext {
     }
 
     @Override
+    public <T> Publisher<T> transactionPublisher(TransactionalPublishable<T> transactional) {
+        return context.transactionPublisher(transactional);
+    }
+
+    @Override
     public <T> T connectionResult(ConnectionCallable<T> callable) {
         return context.connectionResult(callable);
     }
@@ -327,6 +353,7 @@ public class MetricsDSLContext implements DSLContext {
     @Override
     @Internal
     @Deprecated
+    @SuppressWarnings("removal")
     public RenderContext renderContext() {
         return context.renderContext();
     }
@@ -369,14 +396,9 @@ public class MetricsDSLContext implements DSLContext {
     @Override
     @Internal
     @Deprecated
+    @SuppressWarnings("removal")
     public BindContext bindContext(PreparedStatement stmt) {
         return context.bindContext(stmt);
-    }
-
-    @Override
-    @Deprecated
-    public int bind(QueryPart part, PreparedStatement stmt) {
-        return context.bind(part, stmt);
     }
 
     @Override
@@ -1048,13 +1070,13 @@ public class MetricsDSLContext implements DSLContext {
         return context.with(alias, fieldAliases);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public WithAsStep with(String alias, Function<? super Field<?>, ? extends String> fieldNameFunction) {
         return context.with(alias, fieldNameFunction);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public WithAsStep with(String alias,
             BiFunction<? super Field<?>, ? super Integer, ? extends String> fieldNameFunction) {
@@ -1461,13 +1483,13 @@ public class MetricsDSLContext implements DSLContext {
         return context.withRecursive(alias, fieldAliases);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public WithAsStep withRecursive(String alias, Function<? super Field<?>, ? extends String> fieldNameFunction) {
         return context.withRecursive(alias, fieldNameFunction);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public WithAsStep withRecursive(String alias,
             BiFunction<? super Field<?>, ? super Integer, ? extends String> fieldNameFunction) {
@@ -1854,8 +1876,8 @@ public class MetricsDSLContext implements DSLContext {
     }
 
     @Override
-    public <R extends Record> SelectWhereStep<R> selectFrom(Table<R> table) {
-        return time(context.selectFrom(table));
+    public <R extends Record> SelectWhereStep<R> selectFrom(TableLike<R> table) {
+        return context.selectFrom(table);
     }
 
     @Override
@@ -2533,41 +2555,41 @@ public class MetricsDSLContext implements DSLContext {
         return context.mergeInto(table);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record, T1> MergeKeyStep1<R, T1> mergeInto(Table<R> table, Field<T1> field1) {
         return context.mergeInto(table, field1);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record, T1, T2> MergeKeyStep2<R, T1, T2> mergeInto(Table<R> table, Field<T1> field1,
             Field<T2> field2) {
         return context.mergeInto(table, field1, field2);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record, T1, T2, T3> MergeKeyStep3<R, T1, T2, T3> mergeInto(Table<R> table, Field<T1> field1,
             Field<T2> field2, Field<T3> field3) {
         return context.mergeInto(table, field1, field2, field3);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record, T1, T2, T3, T4> MergeKeyStep4<R, T1, T2, T3, T4> mergeInto(Table<R> table,
             Field<T1> field1, Field<T2> field2, Field<T3> field3, Field<T4> field4) {
         return context.mergeInto(table, field1, field2, field3, field4);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record, T1, T2, T3, T4, T5> MergeKeyStep5<R, T1, T2, T3, T4, T5> mergeInto(Table<R> table,
             Field<T1> field1, Field<T2> field2, Field<T3> field3, Field<T4> field4, Field<T5> field5) {
         return context.mergeInto(table, field1, field2, field3, field4, field5);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record, T1, T2, T3, T4, T5, T6> MergeKeyStep6<R, T1, T2, T3, T4, T5, T6> mergeInto(Table<R> table,
             Field<T1> field1, Field<T2> field2, Field<T3> field3, Field<T4> field4, Field<T5> field5,
@@ -2575,7 +2597,7 @@ public class MetricsDSLContext implements DSLContext {
         return context.mergeInto(table, field1, field2, field3, field4, field5, field6);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record, T1, T2, T3, T4, T5, T6, T7> MergeKeyStep7<R, T1, T2, T3, T4, T5, T6, T7> mergeInto(
             Table<R> table, Field<T1> field1, Field<T2> field2, Field<T3> field3, Field<T4> field4, Field<T5> field5,
@@ -2583,7 +2605,7 @@ public class MetricsDSLContext implements DSLContext {
         return context.mergeInto(table, field1, field2, field3, field4, field5, field6, field7);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record, T1, T2, T3, T4, T5, T6, T7, T8> MergeKeyStep8<R, T1, T2, T3, T4, T5, T6, T7, T8> mergeInto(
             Table<R> table, Field<T1> field1, Field<T2> field2, Field<T3> field3, Field<T4> field4, Field<T5> field5,
@@ -2591,7 +2613,7 @@ public class MetricsDSLContext implements DSLContext {
         return context.mergeInto(table, field1, field2, field3, field4, field5, field6, field7, field8);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record, T1, T2, T3, T4, T5, T6, T7, T8, T9> MergeKeyStep9<R, T1, T2, T3, T4, T5, T6, T7, T8, T9> mergeInto(
             Table<R> table, Field<T1> field1, Field<T2> field2, Field<T3> field3, Field<T4> field4, Field<T5> field5,
@@ -2599,7 +2621,7 @@ public class MetricsDSLContext implements DSLContext {
         return context.mergeInto(table, field1, field2, field3, field4, field5, field6, field7, field8, field9);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> MergeKeyStep10<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> mergeInto(
             Table<R> table, Field<T1> field1, Field<T2> field2, Field<T3> field3, Field<T4> field4, Field<T5> field5,
@@ -2608,7 +2630,7 @@ public class MetricsDSLContext implements DSLContext {
                 field10);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> MergeKeyStep11<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> mergeInto(
             Table<R> table, Field<T1> field1, Field<T2> field2, Field<T3> field3, Field<T4> field4, Field<T5> field5,
@@ -2618,7 +2640,7 @@ public class MetricsDSLContext implements DSLContext {
                 field11);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> MergeKeyStep12<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> mergeInto(
             Table<R> table, Field<T1> field1, Field<T2> field2, Field<T3> field3, Field<T4> field4, Field<T5> field5,
@@ -2628,7 +2650,7 @@ public class MetricsDSLContext implements DSLContext {
                 field11, field12);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> MergeKeyStep13<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> mergeInto(
             Table<R> table, Field<T1> field1, Field<T2> field2, Field<T3> field3, Field<T4> field4, Field<T5> field5,
@@ -2638,7 +2660,7 @@ public class MetricsDSLContext implements DSLContext {
                 field11, field12, field13);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> MergeKeyStep14<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> mergeInto(
             Table<R> table, Field<T1> field1, Field<T2> field2, Field<T3> field3, Field<T4> field4, Field<T5> field5,
@@ -2648,7 +2670,7 @@ public class MetricsDSLContext implements DSLContext {
                 field11, field12, field13, field14);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> MergeKeyStep15<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> mergeInto(
             Table<R> table, Field<T1> field1, Field<T2> field2, Field<T3> field3, Field<T4> field4, Field<T5> field5,
@@ -2658,7 +2680,7 @@ public class MetricsDSLContext implements DSLContext {
                 field11, field12, field13, field14, field15);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> MergeKeyStep16<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> mergeInto(
             Table<R> table, Field<T1> field1, Field<T2> field2, Field<T3> field3, Field<T4> field4, Field<T5> field5,
@@ -2669,7 +2691,7 @@ public class MetricsDSLContext implements DSLContext {
                 field11, field12, field13, field14, field15, field16);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17> MergeKeyStep17<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17> mergeInto(
             Table<R> table, Field<T1> field1, Field<T2> field2, Field<T3> field3, Field<T4> field4, Field<T5> field5,
@@ -2680,7 +2702,7 @@ public class MetricsDSLContext implements DSLContext {
                 field11, field12, field13, field14, field15, field16, field17);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18> MergeKeyStep18<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18> mergeInto(
             Table<R> table, Field<T1> field1, Field<T2> field2, Field<T3> field3, Field<T4> field4, Field<T5> field5,
@@ -2691,7 +2713,7 @@ public class MetricsDSLContext implements DSLContext {
                 field11, field12, field13, field14, field15, field16, field17, field18);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19> MergeKeyStep19<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19> mergeInto(
             Table<R> table, Field<T1> field1, Field<T2> field2, Field<T3> field3, Field<T4> field4, Field<T5> field5,
@@ -2702,7 +2724,7 @@ public class MetricsDSLContext implements DSLContext {
                 field11, field12, field13, field14, field15, field16, field17, field18, field19);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20> MergeKeyStep20<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20> mergeInto(
             Table<R> table, Field<T1> field1, Field<T2> field2, Field<T3> field3, Field<T4> field4, Field<T5> field5,
@@ -2713,7 +2735,7 @@ public class MetricsDSLContext implements DSLContext {
                 field11, field12, field13, field14, field15, field16, field17, field18, field19, field20);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21> MergeKeyStep21<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21> mergeInto(
             Table<R> table, Field<T1> field1, Field<T2> field2, Field<T3> field3, Field<T4> field4, Field<T5> field5,
@@ -2725,7 +2747,7 @@ public class MetricsDSLContext implements DSLContext {
                 field11, field12, field13, field14, field15, field16, field17, field18, field19, field20, field21);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22> MergeKeyStep22<R, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22> mergeInto(
             Table<R> table, Field<T1> field1, Field<T2> field2, Field<T3> field3, Field<T4> field4, Field<T5> field5,
@@ -2738,13 +2760,13 @@ public class MetricsDSLContext implements DSLContext {
                 field22);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record> MergeKeyStepN<R> mergeInto(Table<R> table, Field<?>... fields) {
         return context.mergeInto(table, fields);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public <R extends Record> MergeKeyStepN<R> mergeInto(Table<R> table, Collection<? extends Field<?>> fields) {
         return context.mergeInto(table, fields);
@@ -2976,30 +2998,41 @@ public class MetricsDSLContext implements DSLContext {
     }
 
     @Override
+    public RowCountQuery setLocal(Name name, Param<?> value) {
+        return context.setLocal(name, value);
+    }
+
+    @SuppressWarnings("removal")
+    @Override
     public CreateDatabaseFinalStep createDatabase(String database) {
         return context.createDatabase(database);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public CreateDatabaseFinalStep createDatabase(Name database) {
         return context.createDatabase(database);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public CreateDatabaseFinalStep createDatabase(Catalog database) {
         return context.createDatabase(database);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public CreateDatabaseFinalStep createDatabaseIfNotExists(String database) {
         return context.createDatabaseIfNotExists(database);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public CreateDatabaseFinalStep createDatabaseIfNotExists(Name database) {
         return context.createDatabaseIfNotExists(database);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public CreateDatabaseFinalStep createDatabaseIfNotExists(Catalog database) {
         return context.createDatabaseIfNotExists(database);
@@ -3066,6 +3099,11 @@ public class MetricsDSLContext implements DSLContext {
     }
 
     @Override
+    public CommentOnIsStep commentOnColumn(String field) {
+        return context.commentOnColumn(field);
+    }
+
+    @Override
     public CommentOnIsStep commentOnColumn(Name columnName) {
         return context.commentOnColumn(columnName);
     }
@@ -3075,109 +3113,130 @@ public class MetricsDSLContext implements DSLContext {
         return context.commentOnColumn(field);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public CreateSchemaFinalStep createSchema(String schema) {
         return context.createSchema(schema);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public CreateSchemaFinalStep createSchema(Name schema) {
         return context.createSchema(schema);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public CreateSchemaFinalStep createSchema(Schema schema) {
         return context.createSchema(schema);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public CreateSchemaFinalStep createSchemaIfNotExists(String schema) {
         return context.createSchemaIfNotExists(schema);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public CreateSchemaFinalStep createSchemaIfNotExists(Name schema) {
         return context.createSchemaIfNotExists(schema);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public CreateSchemaFinalStep createSchemaIfNotExists(Schema schema) {
         return context.createSchemaIfNotExists(schema);
     }
 
     @Override
-    public CreateTableColumnStep createTable(String table) {
+    public CreateTableElementListStep createTable(String table) {
         return context.createTable(table);
     }
 
     @Override
-    public CreateTableColumnStep createTable(Name table) {
+    public CreateTableElementListStep createTable(Name table) {
         return context.createTable(table);
     }
 
     @Override
-    public CreateTableColumnStep createTable(Table<?> table) {
+    public CreateTableElementListStep createTable(Table<?> table) {
         return context.createTable(table);
     }
 
     @Override
-    public CreateTableColumnStep createTableIfNotExists(String table) {
+    public CreateTableElementListStep createTableIfNotExists(String table) {
         return context.createTableIfNotExists(table);
     }
 
     @Override
-    public CreateTableColumnStep createTableIfNotExists(Name table) {
+    public CreateTableElementListStep createTableIfNotExists(Name table) {
         return context.createTableIfNotExists(table);
     }
 
     @Override
-    public CreateTableColumnStep createTableIfNotExists(Table<?> table) {
+    public CreateTableElementListStep createTableIfNotExists(Table<?> table) {
         return context.createTableIfNotExists(table);
     }
 
     @Override
-    public CreateTableColumnStep createTemporaryTable(String table) {
+    public CreateTableElementListStep createTemporaryTable(String table) {
         return context.createTemporaryTable(table);
     }
 
     @Override
-    public CreateTableColumnStep createTemporaryTable(Name table) {
+    public CreateTableElementListStep createTemporaryTable(Name table) {
         return context.createTemporaryTable(table);
     }
 
     @Override
-    public CreateTableColumnStep createTemporaryTable(Table<?> table) {
+    public CreateTableElementListStep createTemporaryTable(Table<?> table) {
         return context.createTemporaryTable(table);
     }
 
     @Override
-    public CreateTableColumnStep createTemporaryTableIfNotExists(String table) {
+    public CreateTableElementListStep createTemporaryTableIfNotExists(String table) {
         return context.createTemporaryTableIfNotExists(table);
     }
 
     @Override
-    public CreateTableColumnStep createTemporaryTableIfNotExists(Name table) {
+    public CreateTableElementListStep createTemporaryTableIfNotExists(Name table) {
         return context.createTemporaryTableIfNotExists(table);
     }
 
     @Override
-    public CreateTableColumnStep createTemporaryTableIfNotExists(Table<?> table) {
+    public CreateTableElementListStep createTemporaryTableIfNotExists(Table<?> table) {
         return context.createTemporaryTableIfNotExists(table);
     }
 
     @Override
-    public CreateTableColumnStep createGlobalTemporaryTable(String table) {
+    public CreateTableElementListStep createGlobalTemporaryTable(String table) {
         return context.createGlobalTemporaryTable(table);
     }
 
     @Override
-    public CreateTableColumnStep createGlobalTemporaryTable(Name table) {
+    public CreateTableElementListStep createGlobalTemporaryTable(Name table) {
         return context.createGlobalTemporaryTable(table);
     }
 
     @Override
-    public CreateTableColumnStep createGlobalTemporaryTable(Table<?> table) {
+    public CreateTableElementListStep createGlobalTemporaryTable(Table<?> table) {
         return context.createGlobalTemporaryTable(table);
+    }
+
+    @Override
+    public CreateTableElementListStep createGlobalTemporaryTableIfNotExists(String table) {
+        return context.createGlobalTemporaryTableIfNotExists(table);
+    }
+
+    @Override
+    public CreateTableElementListStep createGlobalTemporaryTableIfNotExists(Name table) {
+        return context.createGlobalTemporaryTableIfNotExists(table);
+    }
+
+    @Override
+    public CreateTableElementListStep createGlobalTemporaryTableIfNotExists(Table<?> table) {
+        return context.createGlobalTemporaryTableIfNotExists(table);
     }
 
     @Override
@@ -3195,42 +3254,42 @@ public class MetricsDSLContext implements DSLContext {
         return context.createView(view, fields);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public CreateViewAsStep<Record> createView(String view,
             Function<? super Field<?>, ? extends String> fieldNameFunction) {
         return context.createView(view, fieldNameFunction);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public CreateViewAsStep<Record> createView(String view,
             BiFunction<? super Field<?>, ? super Integer, ? extends String> fieldNameFunction) {
         return context.createView(view, fieldNameFunction);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public CreateViewAsStep<Record> createView(Name view,
             Function<? super Field<?>, ? extends Name> fieldNameFunction) {
         return context.createView(view, fieldNameFunction);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public CreateViewAsStep<Record> createView(Name view,
             BiFunction<? super Field<?>, ? super Integer, ? extends Name> fieldNameFunction) {
         return context.createView(view, fieldNameFunction);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public CreateViewAsStep<Record> createView(Table<?> view,
             Function<? super Field<?>, ? extends Field<?>> fieldNameFunction) {
         return context.createView(view, fieldNameFunction);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public CreateViewAsStep<Record> createView(Table<?> view,
             BiFunction<? super Field<?>, ? super Integer, ? extends Field<?>> fieldNameFunction) {
@@ -3252,42 +3311,42 @@ public class MetricsDSLContext implements DSLContext {
         return context.createOrReplaceView(view, fields);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public CreateViewAsStep<Record> createOrReplaceView(String view,
             Function<? super Field<?>, ? extends String> fieldNameFunction) {
         return context.createOrReplaceView(view, fieldNameFunction);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public CreateViewAsStep<Record> createOrReplaceView(String view,
             BiFunction<? super Field<?>, ? super Integer, ? extends String> fieldNameFunction) {
         return context.createOrReplaceView(view, fieldNameFunction);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public CreateViewAsStep<Record> createOrReplaceView(Name view,
             Function<? super Field<?>, ? extends Name> fieldNameFunction) {
         return context.createOrReplaceView(view, fieldNameFunction);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public CreateViewAsStep<Record> createOrReplaceView(Name view,
             BiFunction<? super Field<?>, ? super Integer, ? extends Name> fieldNameFunction) {
         return context.createOrReplaceView(view, fieldNameFunction);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public CreateViewAsStep<Record> createOrReplaceView(Table<?> view,
             Function<? super Field<?>, ? extends Field<?>> fieldNameFunction) {
         return context.createOrReplaceView(view, fieldNameFunction);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public CreateViewAsStep<Record> createOrReplaceView(Table<?> view,
             BiFunction<? super Field<?>, ? super Integer, ? extends Field<?>> fieldNameFunction) {
@@ -3309,42 +3368,42 @@ public class MetricsDSLContext implements DSLContext {
         return context.createViewIfNotExists(view, fields);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public CreateViewAsStep<Record> createViewIfNotExists(String view,
             Function<? super Field<?>, ? extends String> fieldNameFunction) {
         return context.createViewIfNotExists(view, fieldNameFunction);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public CreateViewAsStep<Record> createViewIfNotExists(String view,
             BiFunction<? super Field<?>, ? super Integer, ? extends String> fieldNameFunction) {
         return context.createViewIfNotExists(view, fieldNameFunction);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public CreateViewAsStep<Record> createViewIfNotExists(Name view,
             Function<? super Field<?>, ? extends Name> fieldNameFunction) {
         return context.createViewIfNotExists(view, fieldNameFunction);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public CreateViewAsStep<Record> createViewIfNotExists(Name view,
             BiFunction<? super Field<?>, ? super Integer, ? extends Name> fieldNameFunction) {
         return context.createViewIfNotExists(view, fieldNameFunction);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public CreateViewAsStep<Record> createViewIfNotExists(Table<?> view,
             Function<? super Field<?>, ? extends Field<?>> fieldNameFunction) {
         return context.createViewIfNotExists(view, fieldNameFunction);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     @Override
     public CreateViewAsStep<Record> createViewIfNotExists(Table<?> view,
             BiFunction<? super Field<?>, ? super Integer, ? extends Field<?>> fieldNameFunction) {
@@ -3457,6 +3516,11 @@ public class MetricsDSLContext implements DSLContext {
     }
 
     @Override
+    public CreateIndexStep createIndexIfNotExists() {
+        return context.createIndexIfNotExists();
+    }
+
+    @Override
     public CreateIndexStep createUniqueIndex() {
         return context.createUniqueIndex();
     }
@@ -3489,6 +3553,11 @@ public class MetricsDSLContext implements DSLContext {
     @Override
     public CreateIndexStep createUniqueIndexIfNotExists(Index index) {
         return context.createUniqueIndexIfNotExists(index);
+    }
+
+    @Override
+    public CreateIndexStep createUniqueIndexIfNotExists() {
+        return context.createUniqueIndexIfNotExists();
     }
 
     @Override
@@ -3582,12 +3651,12 @@ public class MetricsDSLContext implements DSLContext {
     }
 
     @Override
-    public AlterSequenceStep<BigInteger> alterSequence(String sequence) {
+    public AlterSequenceStep<Number> alterSequence(String sequence) {
         return context.alterSequence(sequence);
     }
 
     @Override
-    public AlterSequenceStep<BigInteger> alterSequence(Name sequence) {
+    public AlterSequenceStep<Number> alterSequence(Name sequence) {
         return context.alterSequence(sequence);
     }
 
@@ -3597,12 +3666,12 @@ public class MetricsDSLContext implements DSLContext {
     }
 
     @Override
-    public AlterSequenceStep<BigInteger> alterSequenceIfExists(String sequence) {
+    public AlterSequenceStep<Number> alterSequenceIfExists(String sequence) {
         return context.alterSequenceIfExists(sequence);
     }
 
     @Override
-    public AlterSequenceStep<BigInteger> alterSequenceIfExists(Name sequence) {
+    public AlterSequenceStep<Number> alterSequenceIfExists(Name sequence) {
         return context.alterSequenceIfExists(sequence);
     }
 
@@ -3671,31 +3740,37 @@ public class MetricsDSLContext implements DSLContext {
         return context.alterSchemaIfExists(schema);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public DropDatabaseFinalStep dropDatabase(String database) {
         return context.dropDatabase(database);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public DropDatabaseFinalStep dropDatabase(Name database) {
         return context.dropDatabase(database);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public DropDatabaseFinalStep dropDatabase(Catalog database) {
         return context.dropDatabase(database);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public DropDatabaseFinalStep dropDatabaseIfExists(String database) {
         return context.dropDatabaseIfExists(database);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public DropDatabaseFinalStep dropDatabaseIfExists(Name database) {
         return context.dropDatabaseIfExists(database);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public DropDatabaseFinalStep dropDatabaseIfExists(Catalog database) {
         return context.dropDatabaseIfExists(database);
@@ -3777,17 +3852,17 @@ public class MetricsDSLContext implements DSLContext {
     }
 
     @Override
-    public AlterIndexStep alterIndexIfExists(String index) {
+    public AlterIndexOnStep alterIndexIfExists(String index) {
         return context.alterIndexIfExists(index);
     }
 
     @Override
-    public AlterIndexStep alterIndexIfExists(Name index) {
+    public AlterIndexOnStep alterIndexIfExists(Name index) {
         return context.alterIndexIfExists(index);
     }
 
     @Override
-    public AlterIndexStep alterIndexIfExists(Index index) {
+    public AlterIndexOnStep alterIndexIfExists(Index index) {
         return context.alterIndexIfExists(index);
     }
 
@@ -3821,31 +3896,37 @@ public class MetricsDSLContext implements DSLContext {
         return context.dropSchemaIfExists(schema);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public DropViewFinalStep dropView(String view) {
         return context.dropView(view);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public DropViewFinalStep dropView(Name view) {
         return context.dropView(view);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public DropViewFinalStep dropView(Table<?> view) {
         return context.dropView(view);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public DropViewFinalStep dropViewIfExists(String view) {
         return context.dropViewIfExists(view);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public DropViewFinalStep dropViewIfExists(Name view) {
         return context.dropViewIfExists(view);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public DropViewFinalStep dropViewIfExists(Table<?> view) {
         return context.dropViewIfExists(view);
@@ -3941,31 +4022,37 @@ public class MetricsDSLContext implements DSLContext {
         return context.dropIndexIfExists(index);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public DropSequenceFinalStep dropSequence(String sequence) {
         return context.dropSequence(sequence);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public DropSequenceFinalStep dropSequence(Name sequence) {
         return context.dropSequence(sequence);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public DropSequenceFinalStep dropSequence(Sequence<?> sequence) {
         return context.dropSequence(sequence);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public DropSequenceFinalStep dropSequenceIfExists(String sequence) {
         return context.dropSequenceIfExists(sequence);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public DropSequenceFinalStep dropSequenceIfExists(Name sequence) {
         return context.dropSequenceIfExists(sequence);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public DropSequenceFinalStep dropSequenceIfExists(Sequence<?> sequence) {
         return context.dropSequenceIfExists(sequence);
@@ -4527,7 +4614,7 @@ public class MetricsDSLContext implements DSLContext {
 
     @Override
     public <T> T fetchValue(Table<? extends Record1<T>> table) throws DataAccessException, TooManyRowsException {
-        return context.fetchValue(table);
+        return context.<T>fetchValue(table);
     }
 
     @Override
@@ -4542,7 +4629,7 @@ public class MetricsDSLContext implements DSLContext {
     }
 
     @Override
-    public <T> T fetchValue(Field<T> field) throws DataAccessException {
+    public <T> T fetchValue(SelectField<T> field) throws DataAccessException {
         return context.fetchValue(field);
     }
 
@@ -4571,6 +4658,16 @@ public class MetricsDSLContext implements DSLContext {
     @Override
     public <T> List<T> fetchValues(TableField<?, T> field) throws DataAccessException {
         return context.fetchValues(field);
+    }
+
+    @Override
+    public <K, V> Map<K, V> fetchMap(ResultQuery<? extends Record2<K, V>> query) throws DataAccessException {
+        return context.fetchMap(query);
+    }
+
+    @Override
+    public <K, V> Map<K, List<V>> fetchGroups(ResultQuery<? extends Record2<K, V>> query) throws DataAccessException {
+        return context.fetchGroups(query);
     }
 
     @Override
@@ -4908,6 +5005,164 @@ public class MetricsDSLContext implements DSLContext {
     }
 
     @Override
+    public <R extends Record> R fetchSingle(Table<R> table, Condition c1, Condition c2)
+            throws DataAccessException, NoDataFoundException, TooManyRowsException {
+        return context.fetchSingle(table, c1, c2);
+    }
+
+    @Override
+    public <R extends Record> R fetchSingle(Table<R> table, Condition c1, Condition c2, Condition c3)
+            throws DataAccessException, NoDataFoundException, TooManyRowsException {
+        return context.fetchSingle(table, c1, c2, c3);
+    }
+
+    @Override
+    public <R extends Record> R fetchSingle(Table<R> table, Condition c1, Condition c2, Condition c3, Condition c4)
+            throws DataAccessException, NoDataFoundException, TooManyRowsException {
+        return context.fetchSingle(table, c1, c2, c3, c4);
+    }
+
+    @Override
+    public <R extends Record> R fetchSingle(Table<R> table, Condition c1, Condition c2, Condition c3, Condition c4,
+            Condition c5) throws DataAccessException, NoDataFoundException, TooManyRowsException {
+        return context.fetchSingle(table, c1, c2, c3, c4, c5);
+    }
+
+    @Override
+    public <R extends Record> R fetchSingle(Table<R> table, Condition c1, Condition c2, Condition c3, Condition c4,
+            Condition c5, Condition c6) throws DataAccessException, NoDataFoundException, TooManyRowsException {
+        return context.fetchSingle(table, c1, c2, c3, c4, c5, c6);
+    }
+
+    @Override
+    public <R extends Record> R fetchSingle(Table<R> table, Condition c1, Condition c2, Condition c3, Condition c4,
+            Condition c5, Condition c6, Condition c7)
+            throws DataAccessException, NoDataFoundException, TooManyRowsException {
+        return context.fetchSingle(table, c1, c2, c3, c4, c5, c6, c7);
+    }
+
+    @Override
+    public <R extends Record> R fetchSingle(Table<R> table, Condition c1, Condition c2, Condition c3, Condition c4,
+            Condition c5, Condition c6, Condition c7, Condition c8)
+            throws DataAccessException, NoDataFoundException, TooManyRowsException {
+        return context.fetchSingle(table, c1, c2, c3, c4, c5, c6, c7, c8);
+    }
+
+    @Override
+    public <R extends Record> R fetchSingle(Table<R> table, Condition c1, Condition c2, Condition c3, Condition c4,
+            Condition c5, Condition c6, Condition c7, Condition c8, Condition c9)
+            throws DataAccessException, NoDataFoundException, TooManyRowsException {
+        return context.fetchSingle(table, c1, c2, c3, c4, c5, c6, c7, c8, c9);
+    }
+
+    @Override
+    public <R extends Record> R fetchSingle(Table<R> table, Condition c1, Condition c2, Condition c3, Condition c4,
+            Condition c5, Condition c6, Condition c7, Condition c8, Condition c9, Condition c10)
+            throws DataAccessException, NoDataFoundException, TooManyRowsException {
+        return context.fetchSingle(table, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10);
+    }
+
+    @Override
+    public <R extends Record> R fetchSingle(Table<R> table, Condition c1, Condition c2, Condition c3, Condition c4,
+            Condition c5, Condition c6, Condition c7, Condition c8, Condition c9, Condition c10, Condition c11)
+            throws DataAccessException, NoDataFoundException, TooManyRowsException {
+        return context.fetchSingle(table, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11);
+    }
+
+    @Override
+    public <R extends Record> R fetchSingle(Table<R> table, Condition c1, Condition c2, Condition c3, Condition c4,
+            Condition c5, Condition c6, Condition c7, Condition c8, Condition c9, Condition c10, Condition c11,
+            Condition c12) throws DataAccessException, NoDataFoundException, TooManyRowsException {
+        return context.fetchSingle(table, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12);
+    }
+
+    @Override
+    public <R extends Record> R fetchSingle(Table<R> table, Condition c1, Condition c2, Condition c3, Condition c4,
+            Condition c5, Condition c6, Condition c7, Condition c8, Condition c9, Condition c10, Condition c11,
+            Condition c12, Condition c13) throws DataAccessException, NoDataFoundException, TooManyRowsException {
+        return context.fetchSingle(table, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13);
+    }
+
+    @Override
+    public <R extends Record> R fetchSingle(Table<R> table, Condition c1, Condition c2, Condition c3, Condition c4,
+            Condition c5, Condition c6, Condition c7, Condition c8, Condition c9, Condition c10, Condition c11,
+            Condition c12, Condition c13, Condition c14)
+            throws DataAccessException, NoDataFoundException, TooManyRowsException {
+        return context.fetchSingle(table, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14);
+    }
+
+    @Override
+    public <R extends Record> R fetchSingle(Table<R> table, Condition c1, Condition c2, Condition c3, Condition c4,
+            Condition c5, Condition c6, Condition c7, Condition c8, Condition c9, Condition c10, Condition c11,
+            Condition c12, Condition c13, Condition c14, Condition c15)
+            throws DataAccessException, NoDataFoundException, TooManyRowsException {
+        return context.fetchSingle(table, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15);
+    }
+
+    @Override
+    public <R extends Record> R fetchSingle(Table<R> table, Condition c1, Condition c2, Condition c3, Condition c4,
+            Condition c5, Condition c6, Condition c7, Condition c8, Condition c9, Condition c10, Condition c11,
+            Condition c12, Condition c13, Condition c14, Condition c15, Condition c16)
+            throws DataAccessException, NoDataFoundException, TooManyRowsException {
+        return context.fetchSingle(table, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16);
+    }
+
+    @Override
+    public <R extends Record> R fetchSingle(Table<R> table, Condition c1, Condition c2, Condition c3, Condition c4,
+            Condition c5, Condition c6, Condition c7, Condition c8, Condition c9, Condition c10, Condition c11,
+            Condition c12, Condition c13, Condition c14, Condition c15, Condition c16, Condition c17)
+            throws DataAccessException, NoDataFoundException, TooManyRowsException {
+        return context.fetchSingle(table, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16, c17);
+    }
+
+    @Override
+    public <R extends Record> R fetchSingle(Table<R> table, Condition c1, Condition c2, Condition c3, Condition c4,
+            Condition c5, Condition c6, Condition c7, Condition c8, Condition c9, Condition c10, Condition c11,
+            Condition c12, Condition c13, Condition c14, Condition c15, Condition c16, Condition c17, Condition c18)
+            throws DataAccessException, NoDataFoundException, TooManyRowsException {
+        return context.fetchSingle(table, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16, c17,
+                c18);
+    }
+
+    @Override
+    public <R extends Record> R fetchSingle(Table<R> table, Condition c1, Condition c2, Condition c3, Condition c4,
+            Condition c5, Condition c6, Condition c7, Condition c8, Condition c9, Condition c10, Condition c11,
+            Condition c12, Condition c13, Condition c14, Condition c15, Condition c16, Condition c17, Condition c18,
+            Condition c19) throws DataAccessException, NoDataFoundException, TooManyRowsException {
+        return context.fetchSingle(table, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16, c17,
+                c18, c19);
+    }
+
+    @Override
+    public <R extends Record> R fetchSingle(Table<R> table, Condition c1, Condition c2, Condition c3, Condition c4,
+            Condition c5, Condition c6, Condition c7, Condition c8, Condition c9, Condition c10, Condition c11,
+            Condition c12, Condition c13, Condition c14, Condition c15, Condition c16, Condition c17, Condition c18,
+            Condition c19, Condition c20) throws DataAccessException, NoDataFoundException, TooManyRowsException {
+        return context.fetchSingle(table, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16, c17,
+                c18, c19, c20);
+    }
+
+    @Override
+    public <R extends Record> R fetchSingle(Table<R> table, Condition c1, Condition c2, Condition c3, Condition c4,
+            Condition c5, Condition c6, Condition c7, Condition c8, Condition c9, Condition c10, Condition c11,
+            Condition c12, Condition c13, Condition c14, Condition c15, Condition c16, Condition c17, Condition c18,
+            Condition c19, Condition c20, Condition c21)
+            throws DataAccessException, NoDataFoundException, TooManyRowsException {
+        return context.fetchSingle(table, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16, c17,
+                c18, c19, c20, c21);
+    }
+
+    @Override
+    public <R extends Record> R fetchSingle(Table<R> table, Condition c1, Condition c2, Condition c3, Condition c4,
+            Condition c5, Condition c6, Condition c7, Condition c8, Condition c9, Condition c10, Condition c11,
+            Condition c12, Condition c13, Condition c14, Condition c15, Condition c16, Condition c17, Condition c18,
+            Condition c19, Condition c20, Condition c21, Condition c22)
+            throws DataAccessException, NoDataFoundException, TooManyRowsException {
+        return context.fetchSingle(table, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16, c17,
+                c18, c19, c20, c21, c22);
+    }
+
+    @Override
     public <R extends Record> Optional<R> fetchOptional(Table<R> table)
             throws DataAccessException, TooManyRowsException {
         return context.fetchOptional(table);
@@ -5062,6 +5317,11 @@ public class MetricsDSLContext implements DSLContext {
     @Override
     public int executeDelete(TableRecord<?> record, Condition condition) throws DataAccessException {
         return context.executeDelete(record, condition);
+    }
+
+    @Override
+    public Instant creationTime() {
+        return context.creationTime();
     }
 
     @Override
